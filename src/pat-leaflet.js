@@ -80,6 +80,7 @@
         map: undefined,
 
         init: function initUndefined () {
+            var self = this;
             var options = this.options = parser.parse(this.$el);
 
             var fitBoundsOptions = {
@@ -95,8 +96,7 @@
                 geojson,
                 geosearch,
                 main_marker,
-                marker_cluster,
-                marker_layer;
+                marker_cluster;
 
             // MAP INIT
             var map = this.map = new L.Map(this.$el[0], {
@@ -107,6 +107,13 @@
                 sleepNote: false,
                 hoverToWake: false,
                 sleepOpacity: 1
+            });
+
+            this.$el.on('leaflet.refresh', function(e, geojson) {
+                if ( typeof marker_cluster != "undefined" ) {
+                    marker_cluster.clearLayers();
+                }
+                marker_cluster = self.draw_markers(map, options, main_marker, bounds, fitBoundsOptions, geojson);
             });
 
             // hand over some map events to the element
@@ -154,72 +161,7 @@
             // ADD MARKERS
             geojson = this.$el.data().geojson;
             if (geojson) {
-                marker_cluster = new L.MarkerClusterGroup({'maxClusterRadius': options.maxClusterRadius});
-                marker_layer = L.geoJson(geojson, {
-                    pointToLayer: function(feature, latlng) {
-                        var extraClasses = feature.properties.extraClasses || '';
-                        var markerColor = 'green';
-                        if (feature.properties.color) {
-                            markerColor = feature.properties.color;
-                        } else if (!main_marker || feature.properties.main) {
-                            markerColor = 'red';
-                        }
-                        var marker_icon = this.create_marker(markerColor, extraClasses);
-                        var marker = L.marker(latlng, {
-                            icon: marker_icon,
-                            draggable: feature.properties.editable
-                        });
-                        if (!main_marker || feature.properties.main) {
-                            // Set main marker. This is the one, which is used
-                            // for setting the search result marker.
-                            main_marker = marker;
-                        }
-                        marker.on('dragend move', function (e) {
-                            // UPDATE INPUTS ON MARKER MOVE
-                            var latlng = e.target.getLatLng();
-                            var $latinput = $(feature.properties.latinput);
-                            var $lnginput = $(feature.properties.lnginput);
-                            if ($latinput.length) {
-                                $latinput.val(latlng.lat);
-                            }
-                            if ($lnginput.length) {
-                                $lnginput.val(latlng.lng);
-                            }
-                        });
-                        if (feature.properties.latinput) {
-                            // UPDATE MARKER ON LATITUDE CHANGE
-                            $(feature.properties.latinput).on('change', function (e) {
-                                var latlng = marker.getLatLng();
-                                marker_cluster.removeLayer(marker);
-                                marker.setLatLng({lat: $(e.target).val(), lng: latlng.lng}).update();
-                                marker_cluster.addLayer(marker);
-                                // fit bounds
-                                bounds = marker_cluster.getBounds();
-                                map.fitBounds(bounds, fitBoundsOptions);
-                            });
-                        }
-                        if (feature.properties.lnginput) {
-                            // UPDATE MARKER ON LONGITUDE CHANGE
-                            $(feature.properties.lnginput).on('change', function (e) {
-                                var latlng = marker.getLatLng();
-                                marker_cluster.removeLayer(marker);
-                                marker.setLatLng({lat: latlng.lat, lng: $(e.target).val()}).update();
-                                marker_cluster.addLayer(marker);
-                                // fit bounds
-                                bounds = marker_cluster.getBounds();
-                                map.fitBounds(bounds, fitBoundsOptions);
-                            });
-                        }
-                        return marker;
-                    }.bind(this),
-                    onEachFeature: this.bind_popup.bind(this),
-                });
-                marker_cluster.addLayer(marker_layer);
-                map.addLayer(marker_cluster);
-
-                // autozoom
-                bounds = marker_cluster.getBounds();
-                map.fitBounds(bounds, fitBoundsOptions);
+                marker_cluster = this.draw_markers(map, options, main_marker, bounds, fitBoundsOptions, geojson);
             } else {
                 map.setView(
                     [options.latitude, options.longitude],
@@ -325,6 +267,82 @@
             icon: 'circle',
             extraClasses: extraClasses
           });
+        },
+
+        draw_markers: function (map, options, main_marker, bounds, fitBoundsOptions, geojson) {
+          var marker_cluster,
+              marker_layer;
+
+          marker_cluster = new L.MarkerClusterGroup({'maxClusterRadius': options.maxClusterRadius});
+          marker_layer = L.geoJson(geojson, {
+              pointToLayer: function(feature, latlng) {
+                  var extraClasses = feature.properties.extraClasses || '';
+                  var markerColor = 'green';
+                  if (feature.properties.color) {
+                      markerColor = feature.properties.color;
+                  } else if (!main_marker || feature.properties.main) {
+                      markerColor = 'red';
+                  }
+                  var marker_icon = this.create_marker(markerColor, extraClasses);
+                  var marker = L.marker(latlng, {
+                      icon: marker_icon,
+                      draggable: feature.properties.editable
+                  });
+                  if (!main_marker || feature.properties.main) {
+                      // Set main marker. This is the one, which is used
+                      // for setting the search result marker.
+                      main_marker = marker;
+                  }
+                  marker.on('dragend move', function (e) {
+                      // UPDATE INPUTS ON MARKER MOVE
+                      var latlng = e.target.getLatLng();
+                      var $latinput = $(feature.properties.latinput);
+                      var $lnginput = $(feature.properties.lnginput);
+                      if ($latinput.length) {
+                          $latinput.val(latlng.lat);
+                      }
+                      if ($lnginput.length) {
+                          $lnginput.val(latlng.lng);
+                      }
+                  });
+                  if (feature.properties.latinput) {
+                      // UPDATE MARKER ON LATITUDE CHANGE
+                      $(feature.properties.latinput).on('change', function (e) {
+                          var latlng = marker.getLatLng();
+                          marker_cluster.removeLayer(marker);
+                          marker.setLatLng({lat: $(e.target).val(), lng: latlng.lng}).update();
+                          marker_cluster.addLayer(marker);
+                          // fit bounds
+                          bounds = marker_cluster.getBounds();
+                          map.fitBounds(bounds, fitBoundsOptions);
+                      });
+                  }
+                  if (feature.properties.lnginput) {
+                      // UPDATE MARKER ON LONGITUDE CHANGE
+                      $(feature.properties.lnginput).on('change', function (e) {
+                          var latlng = marker.getLatLng();
+                          marker_cluster.removeLayer(marker);
+                          marker.setLatLng({lat: latlng.lat, lng: $(e.target).val()}).update();
+                          marker_cluster.addLayer(marker);
+                          // fit bounds
+                          bounds = marker_cluster.getBounds();
+                          map.fitBounds(bounds, fitBoundsOptions);
+                      });
+                  }
+                  return marker;
+              }.bind(this),
+              onEachFeature: this.bind_popup.bind(this),
+          });
+          marker_cluster.addLayer(marker_layer);
+          map.addLayer(marker_cluster);
+
+          // autozoom
+          bounds = marker_cluster.getBounds();
+          map.fitBounds(bounds, fitBoundsOptions);
+          return marker_cluster;
+        },
+
+        cleanup_markers: function (map) {
         }
 
     });

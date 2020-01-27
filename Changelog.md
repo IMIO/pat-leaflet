@@ -1,5 +1,10 @@
 # Changelog
 
+## **1.5.0**
+
+* Add a custom event `leaflet.refresh`` to allow refresh of map data
+  [mpeeters]
+
 ## **1.4.0**
 
 * Fix a problem with ``map_layers`` option when it's a list of ids and no title was generated for the baseLayers object.
