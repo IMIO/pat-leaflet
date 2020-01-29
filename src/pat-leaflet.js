@@ -48,6 +48,7 @@
     parser.addArgument('zoom', '14');
 
     parser.addArgument('maxClusterRadius', '80');
+    parser.addArgument('useCluster', true);
 
     parser.addArgument('boundsPadding', '20');
 
@@ -178,19 +179,31 @@
 
             // Trigger the open of a given popup id
             this.$el.on('leaflet.openPopup', function(e, id) {
-              var markers;
+              var markers = [];
               if ( typeof marker_cluster != "undefined" ) {
-                markers = marker_cluster._topClusterLevel.getAllChildMarkers();
-                markers[id].openPopup();
+                map.eachLayer(function(l) {
+                  if(l instanceof L.Marker) {
+                    markers.push(l);
+                  }
+                });
+                if (id <= markers.length - 1) {
+                  markers[id].openPopup();
+                }
               }
             });
 
             // Trigger the open of a given popup id
             this.$el.on('leaflet.closePopup', function(e, id) {
-              var markers;
+              var markers = [];
               if ( typeof marker_cluster != "undefined" ) {
-                markers = marker_cluster._topClusterLevel.getAllChildMarkers();
-                markers[id].closePopup();
+                map.eachLayer(function(l) {
+                  if(l instanceof L.Marker) {
+                    markers.push(l);
+                  }
+                });
+                if (id <= markers.length - 1) {
+                  markers[id].closePopup();
+                }
               }
             });
 
@@ -355,17 +368,22 @@
               marker_layer,
               bounds;
 
-          marker_cluster = new L.MarkerClusterGroup({'maxClusterRadius': options.maxClusterRadius});
           marker_layer = L.geoJson(geojson, {
               pointToLayer: pointToLayer.bind(this),
               onEachFeature: this.bind_popup.bind(this),
           });
+          if (options.useCluster == true) {
+            marker_cluster = new L.MarkerClusterGroup({'maxClusterRadius': options.maxClusterRadius});
+          } else {
+            marker_cluster = new L.featureGroup()
+          }
           marker_cluster.addLayer(marker_layer);
           map.addLayer(marker_cluster);
 
           // autozoom
           bounds = marker_cluster.getBounds();
           map.fitBounds(bounds, fitBoundsOptions);
+
           return [marker_layer, marker_cluster, bounds];
         },
 

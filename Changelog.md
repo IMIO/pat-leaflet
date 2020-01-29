@@ -2,6 +2,9 @@
 
 ## **1.5.0**
 
+* Add `useCluster` option
+  [mpeeters]
+
 * Add events `leaflet.openPopup` / `leaflet.closePopup` to open and close marker popups
   [mpeeters]
 
