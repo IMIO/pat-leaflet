@@ -176,6 +176,24 @@
               bounds = values[2];
             });
 
+            // Trigger the open of a given popup id
+            this.$el.on('leaflet.openPopup', function(e, id) {
+              var markers;
+              if ( typeof marker_cluster != "undefined" ) {
+                markers = marker_cluster._topClusterLevel.getAllChildMarkers();
+                markers[id].openPopup();
+              }
+            });
+
+            // Trigger the open of a given popup id
+            this.$el.on('leaflet.closePopup', function(e, id) {
+              var markers;
+              if ( typeof marker_cluster != "undefined" ) {
+                markers = marker_cluster._topClusterLevel.getAllChildMarkers();
+                markers[id].closePopup();
+              }
+            });
+
             // hand over some map events to the element
             map.on('moveend zoomend', function (e) {
                 this.$el.trigger('leaflet.' + e.type, {original_event: e});
