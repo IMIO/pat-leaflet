@@ -2,6 +2,9 @@
 
 ## **1.5.0**
 
+* Add events `leaflet.openPopup` / `leaflet.closePopup` to open and close marker popups
+  [mpeeters]
+
 * Add a custom event `leaflet.refresh`` to allow refresh of map data
   [mpeeters]
 
