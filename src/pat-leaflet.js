@@ -171,10 +171,13 @@
               if ( typeof marker_cluster != "undefined" ) {
                 marker_cluster.clearLayers();
               }
-              var values = self.draw_markers(map, options, pointToLayer, fitBoundsOptions, geojson);
-              marker_layer = values[0];
-              marker_cluster = values[1];
-              bounds = values[2];
+              // Sometines geojson data can be empty
+              if ( geojson ) {
+                var values = self.draw_markers(map, options, pointToLayer, fitBoundsOptions, geojson);
+                marker_layer = values[0];
+                marker_cluster = values[1];
+                bounds = values[2];
+              }
             });
 
             // Trigger the open of a given popup id
